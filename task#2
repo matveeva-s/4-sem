@@ -63,6 +63,9 @@ int main()
 	{
 		if (it->second == N) fout << it->first << endl;
 	}
+	/*
+		Кажется, вы не совсем так поняли условие задачи. Давайте на семинаре обсудим.
+	*/
 	fin.close();
 	fout.close();
 	return 0;
