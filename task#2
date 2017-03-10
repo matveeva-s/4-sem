@@ -5,17 +5,26 @@
 #include <fstream>
 #include <algorithm>
 #include <vector>
+
 using namespace std;
+
 struct Statistics
 {
 	int count;
+	/*
+		Что значит a в названии переменной aword?
+	*/
 	string aword;
 };
 
+/*
+fixit: Структура достаточно большая ... следует передать по константной ссылке
+*/
 bool comp(Statistics s1, Statistics s2)
 {
 	return (s1.count > s2.count);
 }
+
 string prepare(string text)
 {
 	int i = 0;
@@ -37,6 +46,9 @@ string prepare(string text)
 int main()
 {
 	int i, N;
+	/*
+		не очень понятно, что за N у вас тут
+	*/
 	cin >> N;
 	map <string, int> m;
 	ifstream fin;
@@ -50,12 +62,36 @@ int main()
 		while (!fin.eof())
 		{
 			fin >> original_text;
+			/*
+				fixit: вместо комментария к переменной, смысл которой вызывает вопросы,
+				нужно в первую очередь попытаться дать этой переменной "говорящее" название.
+				
+				вроде wordsReadCount более или менее соответствует комментарию
+			*/
 			num++; // это счетчик кол-ва прочитанных из файла слов
 			string word = prepare(original_text);
+			
+			/*
+			 fixit: отдельно выделять случай пустой map'ы не нужно
+			*/
 			if (num == 1) m = { { word, 1 } };
+			
+			/*
+				когда вы воспользуетесь методом find у map'ы (см. ниже), то
+				переменная flag вам будет не нужна
+			*/
 			int flag = 0;
 			if (num > 1)
 			{
+				/*
+					fixit:
+					у вас внутри map живёт дерево поиска (как AVL дерево, про которое в 1м семестре вероятно
+					упоминали). 
+					Так вот ... поиск в нем работает за log от числа элементов в map'е в данный момент.
+					
+					Вы же сами пишите поиск линейный, который явно проигрывает уже реализованному.
+					Нужно воспользоваться методом find.
+				*/
 				for (map <string, int>::iterator it = m.begin(); it != m.end(); it++)
 					if ((it->first) == word)
 					{
@@ -81,6 +117,10 @@ int main()
 	sort(s.begin(), s.end(), comp); 
 	 for (i = 0; i < m.size(); i++)
 	{
+		/*
+			Вы почему-то выводите только те слова, которых ровно N в файле.
+			Нас вроде как интересовало, какие слова чаще всего встречаются ... не обязательно N раз.
+		*/
 		if (s[i].count == N) 
 			fout << s[i].aword << endl;
 		if (s[i].count < N) break;
