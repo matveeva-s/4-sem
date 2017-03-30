@@ -1,0 +1,116 @@
+//код не готов, есть проблемы
+#include <SFML\Graphics.hpp>
+#include <iostream>
+#include <cmath>
+#include <vector>
+using namespace std;
+struct Point
+{
+	int x;
+	int y;
+	sf::Color color;
+	int number;
+	// координаты точки на пиксельном поле, цвет, "номер" ближайшего центроида; 
+};
+using Centroids = vector <sf::Color>;
+using ClosestCentroidsIndices = vector <Point>;
+Centroids initializeCentroids(const sf::Image& image, const int k)
+{
+	Centroids centroids(k);
+	for (int i = 0; i < k; i++)
+	centroids[i] = image.getPixel(rand() % image.getSize().x, rand() % image.getSize().y);
+	return centroids;
+};
+ClosestCentroidsIndices findClosestCentroids(const sf::Image& image, Centroids centroids)
+{
+	ClosestCentroidsIndices points((image.getSize().x)*(image.getSize().y));
+	int n = 0;
+	for (int i = 0; i < image.getSize().x; i++)
+	{
+		for (int j = 0; j < image.getSize().y; j++)
+		{
+			n++; //текущий номер пикселя
+			points[n].x = i;
+			points[n].y = j;
+			int min_dist = 20000000;
+			for (int k = 0; k < centroids.size(); k++)
+			{
+				sf::Color pixel = image.getPixel(i, j);
+				//distance_2 это крадрат расстояния от рассматриваемого пикселя до текущей k-ой центроиды
+				int distance_2 = (pixel.r - centroids[k].r) ^ 2 + (pixel.g - centroids[k].g) ^ 2 + (pixel.b - centroids[k].b) ^ 2;
+				if (distance_2 < min_dist)
+				{
+					min_dist = distance_2; 
+					points[n].number = k;
+				}
+			}
+		}
+	}
+	return points; 
+}
+Centroids ComputeMeans(const ClosestCentroidsIndices ids, const int K)
+{
+	int* num = new int[K];
+	Centroids centers(K);
+	for (int i = 0; i < K; i++)
+	{
+		centers[i].r = 0;
+		centers[i].g = 0;
+		centers[i].b = 0;
+		num[i] = 0;
+	}
+	for (int i = 0; i < ids.size(); i++)
+	{
+		centers[ids[i].number].r += ids[i].color.r;
+		centers[ids[i].number].g += ids[i].color.g;
+		centers[ids[i].number].b += ids[i].color.b;
+		num[ids[i].number]++;
+	}
+	for (int i = 0; i < K; i++)
+	{
+		centers[i].r /= num[i];
+		centers[i].g /= num[i];
+		centers[i].b /= num[i];
+	}
+	cout << "'ComputeMeans' passed" << endl;
+	delete[]num;
+	return centers;
+}
+void ChangeColors(sf::Image& image, ClosestCentroidsIndices ids, Centroids centroids)
+{
+	cout << ids.size() << endl;
+	for (int i = 0; i < ids.size(); i++)
+	{
+		int x = ids[i].x;
+		int y = ids[i].y;
+		image.setPixel(x, y, centroids[ids[i].number]);
+	}
+	image.saveToFile("result.png");
+	cout << "'ChangeColors' passed" << endl;
+}
+
+int main()
+{
+	int K = 2;
+	int IterationCount = 10;
+	sf::Image image;
+	sf::Texture texture;
+	sf::Sprite photo;
+	texture.loadFromFile("file.png");
+	auto image = texture.copyToImage();
+	
+	ClosestCentroidsIndices ids;
+	Centroids centroids = initializeCentroids(image, K);
+	for (int it = 0; it < IterationCount; it++)
+	{
+		ids = findClosestCentroids(image, centroids);
+		centroids = ComputeMeans(ids, K);
+	}
+	texture.update(image);
+	photo.setTexture(texture);
+	ChangeColors(image, ids, centroids);
+	system("pause");
+}
+
+
+
