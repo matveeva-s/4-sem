@@ -1,4 +1,4 @@
-//код не готов, есть проблемы
+// лол, это работает!
 #include <SFML\Graphics.hpp>
 #include <iostream>
 #include <cmath>
@@ -6,11 +6,10 @@
 using namespace std;
 struct Point
 {
-	int x;
-	int y;
-	sf::Color color;
-	int number;
-	// координаты точки на пиксельном поле, цвет, "номер" ближайшего центроида; 
+	int x;				  //координата х
+	int y;				  //координата у
+	sf::Color color;      		  //цвет пикселя
+	int number;			  // номер ближайшей центроиды 
 };
 using Centroids = vector <sf::Color>;
 using ClosestCentroidsIndices = vector <Point>;
@@ -24,20 +23,19 @@ Centroids initializeCentroids(const sf::Image& image, const int k)
 ClosestCentroidsIndices findClosestCentroids(const sf::Image& image, Centroids centroids)
 {
 	ClosestCentroidsIndices points((image.getSize().x)*(image.getSize().y));
-	int n = 0;
-	for (int i = 0; i < image.getSize().x; i++)
+	int n = -1;
+	for (int i = 0; (i < image.getSize().x); i++)
 	{
 		for (int j = 0; j < image.getSize().y; j++)
 		{
 			n++; //текущий номер пикселя
 			points[n].x = i;
 			points[n].y = j;
-			int min_dist = 20000000;
+			points[n].color = image.getPixel(i, j);
+			int min_dist = 200000000;
 			for (int k = 0; k < centroids.size(); k++)
 			{
-				sf::Color pixel = image.getPixel(i, j);
-				//distance_2 это крадрат расстояния от рассматриваемого пикселя до текущей k-ой центроиды
-				int distance_2 = (pixel.r - centroids[k].r) ^ 2 + (pixel.g - centroids[k].g) ^ 2 + (pixel.b - centroids[k].b) ^ 2;
+				int distance_2 = pow((points[n].color.r - centroids[k].r), 2) + pow((points[n].color.g - centroids[k].g),2) + pow((points[n].color.b - centroids[k].b),2);
 				if (distance_2 < min_dist)
 				{
 					min_dist = distance_2; 
@@ -51,49 +49,56 @@ ClosestCentroidsIndices findClosestCentroids(const sf::Image& image, Centroids c
 Centroids ComputeMeans(const ClosestCentroidsIndices ids, const int K)
 {
 	int* num = new int[K];
+	int* r = new int[K];
+	int* g = new int[K];
+	int* b = new int[K];
 	Centroids centers(K);
 	for (int i = 0; i < K; i++)
 	{
-		centers[i].r = 0;
-		centers[i].g = 0;
-		centers[i].b = 0;
+		r[i] = 0;
+		g[i] = 0;
+		b[i] = 0;
 		num[i] = 0;
 	}
 	for (int i = 0; i < ids.size(); i++)
 	{
-		centers[ids[i].number].r += ids[i].color.r;
-		centers[ids[i].number].g += ids[i].color.g;
-		centers[ids[i].number].b += ids[i].color.b;
+		r[ids[i].number] += (int)ids[i].color.r;
+		g[ids[i].number] += (int)ids[i].color.g;
+		b[ids[i].number] += (int)ids[i].color.b;
 		num[ids[i].number]++;
 	}
 	for (int i = 0; i < K; i++)
 	{
-		centers[i].r /= num[i];
-		centers[i].g /= num[i];
-		centers[i].b /= num[i];
+			r[i] /= num[i];
+			g[i] /= num[i];
+			b[i] /= num[i];
+			centers[i].r = r[i];
+			centers[i].g = g[i];
+			centers[i].b = b[i];
 	}
-	cout << "'ComputeMeans' passed" << endl;
+	for (int i = 0; i < K; i++)
+	{
+		centers[i].r = r[i];
+		centers[i].g = g[i];
+		centers[i].b = b[i];
+	}
 	delete[]num;
+	delete[]r;
+	delete[]g;
+	delete[]b;
 	return centers;
 }
 void ChangeColors(sf::Image& image, ClosestCentroidsIndices ids, Centroids centroids)
 {
-	cout << ids.size() << endl;
 	for (int i = 0; i < ids.size(); i++)
-	{
-		int x = ids[i].x;
-		int y = ids[i].y;
-		image.setPixel(x, y, centroids[ids[i].number]);
-	}
-	image.saveToFile("result.png");
-	cout << "'ChangeColors' passed" << endl;
+		image.setPixel(ids[i].x, ids[i].y, centroids[ids[i].number]);
 }
 
 int main()
 {
-	int K = 2;
-	int IterationCount = 10;
-	sf::Image image;
+	int K = 3; //количество цветов
+	int IterationCount = 20; 
+	sf::Image im;
 	sf::Texture texture;
 	sf::Sprite photo;
 	texture.loadFromFile("file.png");
@@ -106,9 +111,10 @@ int main()
 		ids = findClosestCentroids(image, centroids);
 		centroids = ComputeMeans(ids, K);
 	}
+	ChangeColors(image, ids, centroids);
+	image.saveToFile("result.png");
 	texture.update(image);
 	photo.setTexture(texture);
-	ChangeColors(image, ids, centroids);
 	system("pause");
 }
 
