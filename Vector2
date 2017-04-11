@@ -1,0 +1,140 @@
+#pragma once
+
+#include<iostream>
+#include <Windows.h>
+
+using namespace std;
+
+struct Vector2
+{
+	float x, y;
+	Vector2()
+	{
+		float x = 0; y = 0;
+	}
+	Vector2(float a, float b)
+	{
+		float x = a; y = b;
+	}
+	Vector2(const Vector2& vec)
+	{
+		this->x = vec.x;
+		this->y = vec.y;
+	}
+	~Vector2()
+	{
+		x = 0; y = 0;
+	}
+	float Len()
+	{
+		return sqrt(x * x + y * y);
+	}
+	float squareLen()
+	{
+		return (x*x + y*y);
+	}
+	Vector2 operator*(const float k) // умножение на число 
+	{
+		Vector2 result;
+		result.x = x * k;
+		result.y = y * k;
+		return result;
+	}	
+	float operator* (const Vector2& other) // скалярное произведение
+	{
+		return(x*other.x + y*other.y);
+	}
+	Vector2 operator+(const Vector2& other) const
+	{
+		Vector2 vec;
+		vec.x = x + other.x;
+		vec.y = y + other.y;
+		return (vec);
+	}
+	Vector2* operator+=(const Vector2& other)
+	{
+		x = x + other.x;
+		y = y + other.y;
+		return this;
+	}
+	Vector2 operator-(const Vector2& other) const
+	{
+		Vector2 vec;
+		vec.x = x - other.x;
+		vec.y = y - other.y;
+		return (vec);
+	}
+	Vector2* operator-=(const Vector2& other)
+	{
+		x = x - other.x;
+		y = y - other.y;
+		return this;
+	} 
+	Vector2 operator-()
+	{
+		Vector2 result;
+		result.x = -x;
+		result.y = -y;
+		return result;
+	}
+	float operator^(const Vector2& other) //векторное произведение
+	{
+		return (x*other.y - y*other.x);
+	}
+	Vector2 operator/ (const float k)
+	{
+		Vector2 result;
+		result.x = x / k;
+		result.y = y / k;
+		return result;
+	}
+	Vector2 norm()
+	{
+		Vector2 result;
+		result.x = x / Len();
+		result.y = y / Len();
+		return result;
+	}
+	Vector2 vertical()
+	{
+		Vector2 result;
+		result.x = y;
+		result.y = -x;
+		return result;
+	}
+	const float PI = atan(1.0) * 4;
+	Vector2 rotate(float a)
+	{
+		Vector2 result;
+		float a_radians = a*PI / 180;
+		result.x = x*cos(a_radians) - y*sin(a_radians);
+		result.y = x*sin(a_radians) + y*cos(a_radians);
+		return result;
+	}
+	void getRotated(float a)
+	{
+		float a_radians = a*PI / 180;
+		x = x*cos(a_radians) - y*sin(a_radians);
+		y = x*sin(a_radians) + y*cos(a_radians);
+	}	
+};
+
+ostream & operator<<(ostream& stream, const Vector2& v)
+{
+	stream << v.x << " " << v.y;
+	return stream;
+}
+istream & operator >> (istream& stream, Vector2& v)
+{
+	stream >> v.x >> v.y;
+	return stream;
+}
+Vector2 operator*(const Vector2& vec, const float k) // умножение на число слева
+{
+	Vector2 result;
+	result.x = vec.x * k;
+	result.y = vec.y * k;
+	return result;
+}
+
+
