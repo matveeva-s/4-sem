@@ -1,0 +1,163 @@
+#include <SFML\Graphics.hpp>
+#include <iostream>
+#include <string>
+#include <cmath>
+#include <list>
+#include "C:\Users\user\Desktop\My study!\Четвертый семестр\Прога\TestSFML\vc2015project\testSFML\Header.hpp"
+
+using namespace std;
+const float MAX_HERO_VELOCITY = 1.5;
+const float MAX_BULLET_VELOCITY = 2;
+const float dt = 0.1;
+const int MAP_SIZE_X = 1200;
+const int MAP_SIZE_Y = 700;
+const float PI = atan(1.0) * 4;
+
+class Object {
+public:
+	Vector2 pos, velocity, direction;
+	string File;
+	sf::Image image;
+	sf::Texture texture;
+	sf::Sprite sprite;
+	Object(string File_, Vector2 pos_, Vector2 direction_) {
+		File = File_;
+		image.loadFromFile("images/" + File);
+		texture.loadFromImage(image);
+		sprite.setTexture(texture);
+		pos.x = pos_.x;
+		pos.y = pos_.y;  
+		sprite.setPosition(pos.x, pos.y);
+		direction.x = direction_.x;
+		direction.y = direction_.y;
+		this->velocity.x = 0.0;
+		this->velocity.y = 0.0;
+	}
+	void update(float dt)
+	{
+		pos += velocity * dt;
+		sprite.setPosition(pos.x, pos.y);
+	}
+};
+class Hero : public Object {
+public:
+	Hero(string File, Vector2 pos, Vector2 direction) : Object(File, pos, direction) {
+		this->radius.x = this->texture.getSize().x / 2;
+		this->radius.y = this->texture.getSize().y / 2;
+	}
+	Vector2 radius;
+	bool HeroOnMap()
+	{
+		if ((pos.x < this->radius.x) || (pos.x > MAP_SIZE_X - this->radius.x)) return false;
+		if ((pos.y < this->radius.y) || (pos.y > MAP_SIZE_Y - this->radius.y)) return false;
+		return true;
+	}
+};
+class Bullet : public Object {
+public:
+	Bullet(string File, Vector2 pos, Vector2 direction) : Object(File, pos, direction) {
+
+		this->velocity.y = (2 * (direction.y > 0) - 1)*sqrt(MAX_BULLET_VELOCITY*MAX_BULLET_VELOCITY / ((direction.x*direction.x) / (direction.y*direction.y) + 1));
+		this->velocity.x = (2 * (direction.x > 0) - 1)*sqrt(MAX_BULLET_VELOCITY*MAX_BULLET_VELOCITY - velocity.y*velocity.y);
+	}
+	bool ThisBulletNotOnMap()
+	{
+		if ((this->pos.x > MAP_SIZE_X) || (this->pos.x < 0) || (this->pos.y > MAP_SIZE_Y) || (this->pos.x < 0))
+			return true;
+		else
+			return false;
+	}
+};
+
+int main()
+{
+	sf::RenderWindow window(sf::VideoMode(MAP_SIZE_X, MAP_SIZE_Y), "My window");
+	Vector2 pos, direction;
+	pos.x = 350;   pos.y = 250;
+	direction.x = 0; direction.y = 0;
+	Hero hero("hero.png", pos, direction);
+	sf::Clock clock;
+	list <Bullet*> bullets;
+	list <Bullet*>::iterator it;
+	while (window.isOpen())
+	{
+		sf::Event event;
+		window.clear(sf::Color::Black);
+		// установка направленности на курсор
+		Vector2 mousePosition, center, dir;
+		mousePosition.x = sf::Mouse::getPosition(window).x;
+		mousePosition.y = sf::Mouse::getPosition(window).y;
+		hero.sprite.setOrigin(hero.radius.x, hero.radius.y);
+		center.x = hero.sprite.getPosition().x;
+		center.y = hero.sprite.getPosition().y;
+		dir.x = mousePosition.x - center.x;
+		dir.y = mousePosition.y - center.y;
+		dir.norm();
+		hero.sprite.setRotation(180 - atan2f(dir.x, dir.y) * 180 / PI);
+		while (window.pollEvent(event))
+		{
+			switch (event.type)
+			{
+			case sf::Event::Closed: window.close();
+				break;
+			case sf::Event::KeyPressed:
+			{
+				if (event.key.code == sf::Keyboard::Left) 
+				{
+					hero.velocity.x = -MAX_HERO_VELOCITY; hero.velocity.y = 0;
+					if (hero.HeroOnMap() == false) { hero.velocity.x = 0; hero.pos.x += 10; }
+					break;
+				}
+				if (event.key.code == sf::Keyboard::Right)
+				{
+					hero.velocity.x = MAX_HERO_VELOCITY; hero.velocity.y = 0;
+					if (hero.HeroOnMap() == false) { hero.velocity.x = 0; hero.pos.x -= 10; }
+					break;
+				}
+				if (event.key.code == sf::Keyboard::Up)
+				{
+					hero.velocity.x = 0; hero.velocity.y = -MAX_HERO_VELOCITY;
+					if (hero.HeroOnMap() == false) { hero.velocity.y = 0; hero.pos.y += 10; }
+					break;
+				}
+				if (event.key.code == sf::Keyboard::Down) 
+				{
+					hero.velocity.x = 0; hero.velocity.y = MAX_HERO_VELOCITY;
+					if (hero.HeroOnMap() == false) { hero.velocity.y = 0; hero.pos.y -= 10; }
+					break;
+				}
+				hero.update(0.1);
+			default:
+				hero.velocity.x = 0; hero.velocity.y = 0;
+				break;
+			}
+			}
+			if (sf::Mouse::isButtonPressed(sf::Mouse::Left))
+			{
+				Vector2 bullet_velocity;
+				bullets.push_back(new Bullet("bullet.png", hero.pos, dir)); //добавление элементов-пуль в список
+			}
+		} //events end
+	for (it = bullets.begin(); it != bullets.end();)
+	{
+		Bullet *b = *it;
+		if ((b)->ThisBulletNotOnMap() == true)
+		{
+			it = bullets.erase(it);
+			delete b;
+		}
+		else it++;
+	} //удаление из списка пуль, вылетевших за пределы экрана
+	for (it = bullets.begin(); it != bullets.end(); it++)
+	{
+		(*it)->update(dt);
+		window.draw((*it)->sprite);
+	}
+	hero.update(dt);
+	window.draw(hero.sprite);
+	window.display();
+	}
+	system("pause");
+}
+
+
